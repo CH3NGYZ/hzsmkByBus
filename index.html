@@ -46,6 +46,8 @@
     if (!accountToken) {
       document.querySelector('.loading').innerHTML = '<span class="error">❌ 缺少 token 参数</span>';
     } else {
+      document.querySelector('.loading').innerHTML = '✅ 正在换取 channelToken...';
+
       axios.post(
         'https://open.iconntech.com/unifyUser/changeToken',
         {
@@ -66,6 +68,8 @@
         if (!channelToken) {
           throw new Error('未获取到 channelToken');
         }
+
+        document.querySelector('.loading').innerHTML = '✅ 正在获取 hzrckToken...';
 
         return axios.post(
           'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
@@ -89,16 +93,19 @@
         const hzrckToken = res2.data?.response?.hzrckToken;
         if (hzrckToken) {
           const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
-      
+
           document.querySelector('.loading').innerHTML =
-            `✅ 即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>正在跳转...`;
-      
-          setTimeout(() => {
-            window.location.href = jumpUrl;
-          }, 1500); // 等待 1.5 秒再跳转
+            `✅ 即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>`;
+
+          // setTimeout(() => {
+          //   window.location.href = jumpUrl;
+          // }, 1500);
         } else {
           throw new Error('未获取到 hzrckToken');
         }
+      })
+      .catch(err => {
+        showError('跳转失败', err);
       });
     }
   </script>
