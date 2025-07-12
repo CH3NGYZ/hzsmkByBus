@@ -16,8 +16,15 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
     function getQueryParam(key) {
-      const url = new URL(window.location.href);
-      return url.searchParams.get(key);
+      const queryString = window.location.search.substring(1);
+      const params = queryString.split("&");
+      for (let i = 0; i < params.length; i++) {
+        const pair = params[i].split("=");
+        if (decodeURIComponent(pair[0]) === key) {
+          return decodeURIComponent(pair[1] || '');
+        }
+      }
+      return null;
     }
 
     function showError(title, err) {
@@ -88,7 +95,7 @@
       
           setTimeout(() => {
             window.location.href = jumpUrl;
-          }, 100); // 等待 1.5 秒再跳转
+          }, 1500); // 等待 1.5 秒再跳转
         } else {
           throw new Error('未获取到 hzrckToken');
         }
