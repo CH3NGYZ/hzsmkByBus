@@ -42,7 +42,7 @@
     }
 
     const accountToken = getQueryParam('token');
-
+    document.querySelector('.loading').innerHTML = '✅ 获取 Token 参数成功';
     if (!accountToken) {
       document.querySelector('.loading').innerHTML = '<span class="error">❌ 缺少 token 参数</span>';
     } else {
