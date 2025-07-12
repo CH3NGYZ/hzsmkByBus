@@ -1,23 +1,67 @@
 # hzsmkByBus
 
-一个 GitHub Pages 页面，用于将 channelToken 转换为 hzrckToken 并跳转到杭州人才卡乘车码页面。
+一个自动跳转工具页，用于将市民卡登录后的 `token` 转换为杭州市人才系统的 `hzrckToken`，并跳转到“免费乘车码”页面。
 
-## 使用方法
+此页面适用于通过 GitHub Pages 托管，并通过 URL 参数完成一次性跳转流程。
 
-https://ch3ngyz.github.io/hzsmkByBus/?channelToken=你的channelToken
+---
+
+## ✨ 功能说明
+
+页面加载后自动执行以下逻辑：
+
+1. 接收 URL 中传入的 `token`（市民卡登录令牌）；
+2. 请求接口 `https://open.iconntech.com/unifyUser/changeToken` 获取对应的 `channelToken`；
+3. 用 `channelToken` 请求杭州市人才系统获取 `hzrckToken`；
+4. 自动跳转到杭州市人才系统的乘车码页面：
+
+```https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=hzrckToken```
 
 
-系统将自动：
+---
 
-1. 请求杭州市人才系统接口，获取 `hzrckToken`；
-2. 拼接跳转链接；
-3. 自动跳转到人才乘车码页面。
+## 🔗 使用方式
 
-## 示例
+### URL 格式：
 
-https://ch3ngyz.github.io/hzsmkByBus/?channelToken=ef45c5b750d04b51ba61d7fcec9ada34
+```https://ch3ngyz.github.io/hzsmkByBus/?token=xxxx```
 
-## 故障排查
 
-- 若页面提示 `缺少 channelToken 参数`，请确认 URL 是否带上 `?channelToken=xxx`
-- 若提示获取失败，请稍后再试或检查 token 是否有效
+其中 `xxxx` 是你从市民卡系统获取的 token。
+
+---
+
+## 🚫 错误处理
+
+- 如果 URL 中未包含 `token` 参数，将提示：“缺少 token 参数”
+- 如果任何一步失败（如 token 无效、接口响应异常），页面会显示具体错误原因
+
+---
+
+## 🛠️ 开发说明
+
+本页面使用原生 HTML + Axios 编写，适合直接部署到 GitHub Pages：
+
+- 主文件：`index.html`
+- 无需构建或依赖打包工具
+- 所有请求均为跨域接口，浏览器环境支持
+
+---
+
+## 📄 接口文档说明
+
+1. `https://open.iconntech.com/unifyUser/changeToken`
+
+    - 输入：appId + token
+    - 输出：channelToken（用于人才系统）
+
+2. `https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken`
+
+    - 输入：channelToken + channel 固定为 `smk_app`
+    - 输出：hzrckToken（人才系统登录令牌）
+
+---
+
+## 📢 免责声明
+
+本工具仅供学习研究使用，请勿用于任何违反平台服务条款的用途。
