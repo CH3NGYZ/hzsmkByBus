@@ -82,13 +82,16 @@
         const hzrckToken = res2.data?.response?.hzrckToken;
         if (hzrckToken) {
           const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
-          window.location.href = jumpUrl;
+      
+          document.querySelector('.loading').innerHTML =
+            `✅ 即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>正在跳转...`;
+      
+          setTimeout(() => {
+            window.location.href = jumpUrl;
+          }, 100); // 等待 1.5 秒再跳转
         } else {
           throw new Error('未获取到 hzrckToken');
         }
-      })
-      .catch(err => {
-        showError('跳转失败', err);
       });
     }
   </script>
