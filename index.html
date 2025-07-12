@@ -48,19 +48,17 @@
     } else {
       document.querySelector('.loading').innerHTML = '✅ 正在换取 channelToken...';
 
-      axios.post(
+      nativeXHRPost(
         'https://open.iconntech.com/unifyUser/changeToken',
         {
           appId: '413201297836154880',
           token: accountToken
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-            'Origin': 'https://talent.hzrcm.cn',
-            'X-Requested-With': 'com.smk',
-            'Referer': 'https://talent.hzrcm.cn/'
-          }
+          'Content-Type': 'application/json',
+          'Origin': 'https://talent.hzrcm.cn',
+          'X-Requested-With': 'com.smk',
+          'Referer': 'https://talent.hzrcm.cn/'
         }
       )
       .then(res1 => {
@@ -68,24 +66,22 @@
         if (!channelToken) {
           throw new Error('未获取到 channelToken');
         }
-
+      
         document.querySelector('.loading').innerHTML = '✅ 正在获取 hzrckToken...';
-
-        return axios.post(
+      
+        return nativeXHRPost(
           'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
           {
             channelToken: channelToken,
             channel: 'smk_app'
           },
           {
-            headers: {
-              'Content-Type': 'application/json;charset=UTF-8',
-              'sendClient': 'hellohzsmk',
-              'sendChl': 'hzsmk.h5',
-              'Origin': 'https://talent.hzrcm.cn',
-              'X-Requested-With': 'com.smk',
-              'Referer': 'https://talent.hzrcm.cn/exthtml/hangZhouTalentCard/index.html'
-            }
+            'Content-Type': 'application/json;charset=UTF-8',
+            'sendClient': 'hellohzsmk',
+            'sendChl': 'hzsmk.h5',
+            'Origin': 'https://talent.hzrcm.cn',
+            'X-Requested-With': 'com.smk',
+            'Referer': 'https://talent.hzrcm.cn/exthtml/hangZhouTalentCard/index.html'
           }
         );
       })
@@ -93,13 +89,10 @@
         const hzrckToken = res2.data?.response?.hzrckToken;
         if (hzrckToken) {
           const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
-
+      
           document.querySelector('.loading').innerHTML =
             `✅ 即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>`;
-
-          // setTimeout(() => {
-          //   window.location.href = jumpUrl;
-          // }, 1500);
+          window.location.href = jumpUrl;
         } else {
           throw new Error('未获取到 hzrckToken');
         }
