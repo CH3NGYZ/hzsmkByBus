@@ -18,11 +18,9 @@
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url, true);
         xhr.timeout = 8000;
-  
         for (const key in headers) {
           xhr.setRequestHeader(key, headers[key]);
         }
-  
         xhr.onreadystatechange = function () {
           if (xhr.readyState === 4) {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -37,15 +35,13 @@
             }
           }
         };
-  
         xhr.onerror = function () {
           reject(new Error('网络错误'));
         };
-  
         xhr.send(JSON.stringify(data));
       });
     }
-  
+
     function getQueryParam(key) {
       const queryString = window.location.search.substring(1);
       const params = queryString.split("&");
@@ -57,7 +53,7 @@
       }
       return null;
     }
-  
+
     function showError(title, err) {
       const errorBox = document.getElementById('errorBox');
       const msg = [
@@ -66,17 +62,52 @@
         err?.response ? `状态码: ${err.response.status}\n响应体:\n${JSON.stringify(err.response.data, null, 2)}` : '',
         err?.stack ? `\n调用栈:\n${err.stack}` : ''
       ].filter(Boolean).join('\n\n');
-  
       document.querySelector('.loading').style.display = 'none';
       errorBox.style.display = 'block';
       errorBox.textContent = msg;
     }
-  
-    const accountToken = getQueryParam('token');
-  
+
+    async function getCouponInfo(hzrckToken) {
+      document.querySelector('.loading').innerHTML = '✅ 正在获取公交卡额度...';
+
+      try {
+        const res = await nativeXHRPost(
+          'https://talent.hzrcm.cn/smk_hztalent_stu/front/app/qinghe/getUserCouponList',
+          { accessToken: hzrckToken },
+          {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'sendClient': 'hellohzsmk',
+            'sendChl': 'hzsmk.h5',
+            'Origin': 'https://talent.hzrcm.cn',
+            'X-Requested-With': 'com.smk',
+            'Referer': 'https://talent.hzrcm.cn/exthtml/youngTalentCard/hzYouthTalentCard/',
+          }
+        );
+
+        if (res.data?.code === 'PY0000') {
+          const list = res.data.response?.[0]?.list || [];
+          const subwayItem = list.find(item => item.couponUseType === 'subway');
+          const title = subwayItem?.couponTitle || '未知';
+          const expire = subwayItem?.expireEndTime || '未知';
+
+          document.querySelector('.loading').innerHTML =
+            `🎫 公交卡额度：<strong>${title}</strong><br>` +
+            `📅 有效期至：<strong>${expire}</strong><br>` +
+            `1 秒后跳转...`;
+
+          await new Promise(r => setTimeout(r, 1000));
+        } else {
+          throw new Error('获取公交卡额度失败，code: ' + res.data?.code);
+        }
+      } catch (err) {
+        showError('获取公交卡额度失败', err);
+        throw err;
+      }
+    }
+
     async function getHzrckToken(channelToken) {
       document.querySelector('.loading').innerHTML = '✅ 使用 channelToken 获取 hzrckToken...';
-  
+
       try {
         const res = await nativeXHRPost(
           'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
@@ -98,10 +129,10 @@
         throw err;
       }
     }
-  
+
     async function changeToken(token) {
       document.querySelector('.loading').innerHTML = '✅ 正在换取 channelToken...';
-  
+
       try {
         const res = await nativeXHRPost(
           'https://open.iconntech.com/unifyUser/changeToken',
@@ -124,65 +155,45 @@
         throw err;
       }
     }
-  
+
+    const accountToken = getQueryParam('token');
+
     (async () => {
       if (!accountToken) {
         document.querySelector('.loading').innerHTML = '<span class="error">❌ 缺少 token 参数</span>';
         return;
       }
-  
+
       let channelToken = localStorage.getItem('channelToken');
-  
+      let hzrckToken;
+
       try {
         if (channelToken) {
-          // 有缓存token，先用它获取 hzrckToken
           const res = await getHzrckToken(channelToken);
           if (res?.code === 'PY0000') {
-            // 成功，跳转
-            const hzrckToken = res.response?.hzrckToken;
-            if (!hzrckToken) throw new Error('未获取到 hzrckToken');
-            const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
-            document.querySelector('.loading').innerHTML =
-              `✅ 使用缓存 channelToken 成功，即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>`;
-            window.location.href = jumpUrl;
-            return;
-          } else {
-            // code 不对，换token重新获取
-            channelToken = await changeToken(accountToken);
-            const res2 = await getHzrckToken(channelToken);
-            if (res2?.code === 'PY0000') {
-              const hzrckToken = res2.response?.hzrckToken;
-              if (!hzrckToken) throw new Error('未获取到 hzrckToken');
-              const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
-              document.querySelector('.loading').innerHTML =
-                `✅ 换取新 channelToken 并成功获取 hzrckToken，即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>`;
-              window.location.href = jumpUrl;
-              return;
-            } else {
-              throw new Error(`获取 hzrckToken 失败，code: ${res2.code}`);
-            }
-          }
-        } else {
-          // 没有缓存 channelToken，正常流程
-          channelToken = await changeToken(accountToken);
-          const res2 = await getHzrckToken(channelToken);
-          if (res2?.code === 'PY0000') {
-            const hzrckToken = res2.response?.hzrckToken;
-            if (!hzrckToken) throw new Error('未获取到 hzrckToken');
-            const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
-            document.querySelector('.loading').innerHTML =
-              `✅ 正常流程完成，即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>`;
-            window.location.href = jumpUrl;
-            return;
-          } else {
-            throw new Error(`获取 hzrckToken 失败，code: ${res2.code}`);
+            hzrckToken = res.response?.hzrckToken;
           }
         }
+
+        if (!hzrckToken) {
+          channelToken = await changeToken(accountToken);
+          const res = await getHzrckToken(channelToken);
+          if (res?.code !== 'PY0000') throw new Error('使用新 channelToken 获取 hzrckToken 失败');
+          hzrckToken = res.response?.hzrckToken;
+        }
+
+        if (!hzrckToken) throw new Error('未获取到 hzrckToken');
+
+        await getCouponInfo(hzrckToken);
+
+        const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
+        document.querySelector('.loading').innerHTML =
+          `✅ 即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>`;
+        window.location.href = jumpUrl;
       } catch (err) {
         showError('跳转失败', err);
       }
     })();
   </script>
-
 </body>
 </html>
