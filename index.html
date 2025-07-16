@@ -9,14 +9,23 @@
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
+      align-items: center; /* 居中iframe容器 */
+      background: #fff;
+    }
+    #container {
+      width: 375px; /* 手机屏幕宽度 */
+      height: calc(100vh - 3.5em); /* 减去底部信息栏高度 */
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
     #webview {
-      flex: 1 1 auto;
-      border: none;
       width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
     }
     #infoBox {
       flex: 0 0 3.5em; /* 底部固定高度 */
+      width: 375px;
       background: #f5f5f5;
       border-top: 1px solid #ccc;
       padding: 0.8em 1em;
@@ -24,6 +33,7 @@
       color: #333;
       text-align: center;
       box-sizing: border-box;
+      margin-top: 0.5em;
     }
     #errorBox {
       color: red;
@@ -36,7 +46,9 @@
   </style>
 </head>
 <body>
-  <iframe id="webview" src="about:blank"></iframe>
+  <div id="container">
+    <iframe id="webview" src="about:blank"></iframe>
+  </div>
   <div id="infoBox">正在获取公交卡额度...</div>
   <div id="errorBox"></div>
 
@@ -158,6 +170,7 @@
       );
       return res.data;
     }
+
     async function changeToken(token) {
       const infoBox = document.getElementById('infoBox');
       infoBox.textContent = '✅ 正在换取 channelToken...';
