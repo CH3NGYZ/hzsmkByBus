@@ -14,8 +14,8 @@
     #webview {
       flex: 1 1 auto;
       border: none;
-      width: 100%;
-      max-width: 100vw;
+      width: 120%;
+      max-width: 120vw;
     }
     #infoBox {
       flex: 0 0 auto;
@@ -126,11 +126,13 @@
         if (res.data?.code === 'PY0000') {
           const list = res.data.response?.[0]?.list || [];
           const subwayItem = list.find(item => item.couponUseType === 'subway');
-          const title = subwayItem?.couponTitle || '未知额度';
+          const titleRaw = subwayItem?.couponTitle || '未知额度';
+          const title = titleRaw.match(/\d+(?:\.\d+)?/)?.[0] || '未知额度';
           const expire = subwayItem?.expireEndTime || '未知有效期';
-
+          
           infoBox.innerHTML =
-            `🎫 公交卡额度：<strong>${title}</strong>&nbsp;&nbsp;📅 有效期至：<strong>${expire}</strong>`;
+            `🎫 公交卡剩：<strong>${title} 元</strong>&nbsp;&nbsp;📅 有效期至：<strong>${expire}</strong>`;
+
 
           document.getElementById('webview').src = jumpUrl;
         } else {
