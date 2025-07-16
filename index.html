@@ -4,23 +4,48 @@
   <meta charset="UTF-8">
   <title>正在跳转...</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; text-align: center; }
-    .loading { font-size: 1.2em; color: #444; }
-    .error { color: red; white-space: pre-wrap; text-align: left; max-width: 600px; margin: 1em auto; }
+    body {
+      font-family: sans-serif;
+      padding: 0;
+      margin: 0;
+      text-align: center;
+    }
+    #webview {
+      width: 100%;
+      height: 60vh;
+      border: none;
+      display: none;
+    }
+    .loading {
+      padding: 1em;
+      font-size: 1.2em;
+      color: #444;
+    }
+    .error {
+      color: red;
+      white-space: pre-wrap;
+      text-align: left;
+      max-width: 600px;
+      margin: 1em auto;
+    }
   </style>
 </head>
 <body>
-  <p class="loading">正在获取 token 并跳转，请稍候...</p>
+  <iframe id="webview"></iframe>
+  <div class="loading">正在获取 token 并跳转，请稍候...</div>
   <div class="error" id="errorBox" style="display:none;"></div>
+
   <script>
     function nativeXHRPost(url, data, headers = {}) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url, true);
         xhr.timeout = 8000;
+
         for (const key in headers) {
           xhr.setRequestHeader(key, headers[key]);
         }
+
         xhr.onreadystatechange = function () {
           if (xhr.readyState === 4) {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -35,9 +60,11 @@
             }
           }
         };
+
         xhr.onerror = function () {
           reject(new Error('网络错误'));
         };
+
         xhr.send(JSON.stringify(data));
       });
     }
@@ -62,12 +89,13 @@
         err?.response ? `状态码: ${err.response.status}\n响应体:\n${JSON.stringify(err.response.data, null, 2)}` : '',
         err?.stack ? `\n调用栈:\n${err.stack}` : ''
       ].filter(Boolean).join('\n\n');
+
       document.querySelector('.loading').style.display = 'none';
       errorBox.style.display = 'block';
       errorBox.textContent = msg;
     }
 
-    async function getCouponInfo(hzrckToken) {
+    async function getCouponInfo(hzrckToken, jumpUrl) {
       document.querySelector('.loading').innerHTML = '✅ 正在获取公交卡额度...';
 
       try {
@@ -90,12 +118,11 @@
           const title = subwayItem?.couponTitle || '未知';
           const expire = subwayItem?.expireEndTime || '未知';
 
+          document.getElementById('webview').style.display = 'block';
           document.querySelector('.loading').innerHTML =
             `🎫 公交卡额度：<strong>${title}</strong><br>` +
-            `📅 有效期至：<strong>${expire}</strong><br>` +
-            `1 秒后跳转...`;
-
-          await new Promise(r => setTimeout(r, 1000));
+            `📅 有效期至：<strong>${expire}</strong><br>`;
+          document.getElementById('webview').src = jumpUrl;
         } else {
           throw new Error('获取公交卡额度失败，code: ' + res.data?.code);
         }
@@ -107,53 +134,44 @@
 
     async function getHzrckToken(channelToken) {
       document.querySelector('.loading').innerHTML = '✅ 使用 channelToken 获取 hzrckToken...';
-
-      try {
-        const res = await nativeXHRPost(
-          'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
-          {
-            channelToken: channelToken,
-            channel: 'smk_app'
-          },
-          {
-            'Content-Type': 'application/json;charset=UTF-8',
-            'sendClient': 'hellohzsmk',
-            'sendChl': 'hzsmk.h5',
-            'Origin': 'https://talent.hzrcm.cn',
-            'X-Requested-With': 'com.smk',
-            'Referer': 'https://talent.hzrcm.cn/exthtml/hangZhouTalentCard/index.html'
-          }
-        );
-        return res.data;
-      } catch (err) {
-        throw err;
-      }
+      const res = await nativeXHRPost(
+        'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
+        {
+          channelToken: channelToken,
+          channel: 'smk_app'
+        },
+        {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'sendClient': 'hellohzsmk',
+          'sendChl': 'hzsmk.h5',
+          'Origin': 'https://talent.hzrcm.cn',
+          'X-Requested-With': 'com.smk',
+          'Referer': 'https://talent.hzrcm.cn/exthtml/hangZhouTalentCard/index.html'
+        }
+      );
+      return res.data;
     }
 
     async function changeToken(token) {
       document.querySelector('.loading').innerHTML = '✅ 正在换取 channelToken...';
 
-      try {
-        const res = await nativeXHRPost(
-          'https://open.iconntech.com/unifyUser/changeToken',
-          {
-            appId: '413201297836154880',
-            token: token
-          },
-          {
-            'Content-Type': 'application/json',
-            'Origin': 'https://talent.hzrcm.cn',
-            'X-Requested-With': 'com.smk',
-            'Referer': 'https://talent.hzrcm.cn/'
-          }
-        );
-        const newChannelToken = res.data?.data;
-        if (!newChannelToken) throw new Error('未获取到 channelToken');
-        localStorage.setItem('channelToken', newChannelToken);
-        return newChannelToken;
-      } catch (err) {
-        throw err;
-      }
+      const res = await nativeXHRPost(
+        'https://open.iconntech.com/unifyUser/changeToken',
+        {
+          appId: '413201297836154880',
+          token: token
+        },
+        {
+          'Content-Type': 'application/json',
+          'Origin': 'https://talent.hzrcm.cn',
+          'X-Requested-With': 'com.smk',
+          'Referer': 'https://talent.hzrcm.cn/'
+        }
+      );
+      const newChannelToken = res.data?.data;
+      if (!newChannelToken) throw new Error('未获取到 channelToken');
+      localStorage.setItem('channelToken', newChannelToken);
+      return newChannelToken;
     }
 
     const accountToken = getQueryParam('token');
@@ -184,12 +202,8 @@
 
         if (!hzrckToken) throw new Error('未获取到 hzrckToken');
 
-        await getCouponInfo(hzrckToken);
-
         const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
-        document.querySelector('.loading').innerHTML =
-          `✅ 即将跳转到：<br><a href="${jumpUrl}">${jumpUrl}</a><br>`;
-        window.location.href = jumpUrl;
+        await getCouponInfo(hzrckToken, jumpUrl);
       } catch (err) {
         showError('跳转失败', err);
       }
