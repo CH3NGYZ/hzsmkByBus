@@ -9,13 +9,17 @@
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
-      align-items: center; /* 居中iframe容器 */
+      align-items: center;
       background: #fff;
     }
+    #container, #infoBox {
+      width: 100%;
+      max-width: 480px;
+      box-sizing: border-box;
+    }
     #container {
-      width: 375px; /* 手机屏幕宽度 */
-      height: calc(100vh - 3.5em); /* 减去底部信息栏高度 */
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      flex: 1;
+      height: 100%;
     }
     #webview {
       width: 100%;
@@ -24,16 +28,12 @@
       display: block;
     }
     #infoBox {
-      flex: 0 0 3.5em; /* 底部固定高度 */
-      width: 375px;
       background: #f5f5f5;
       border-top: 1px solid #ccc;
       padding: 0.8em 1em;
-      font-size: 1.2em;
+      font-size: 1.1em;
       color: #333;
       text-align: center;
-      box-sizing: border-box;
-      margin-top: 0.5em;
     }
     #errorBox {
       color: red;
@@ -58,11 +58,9 @@
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url, true);
         xhr.timeout = 8000;
-
         for (const key in headers) {
           xhr.setRequestHeader(key, headers[key]);
         }
-
         xhr.onreadystatechange = function () {
           if (xhr.readyState === 4) {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -77,11 +75,9 @@
             }
           }
         };
-
         xhr.onerror = function () {
           reject(new Error('网络错误'));
         };
-
         xhr.send(JSON.stringify(data));
       });
     }
@@ -138,7 +134,7 @@
           const expire = subwayItem?.expireEndTime || '未知有效期';
 
           infoBox.innerHTML =
-            `🎫 公交卡额度：<strong>${title}</strong>&nbsp;&nbsp;📅 有效期至：<strong>${expire}</strong>`;
+            `🎫 公交卡额度：<strong>${title}</strong> <br>📅 有效期至：<strong>${expire}</strong>`;
 
           document.getElementById('webview').src = jumpUrl;
         } else {
@@ -151,8 +147,25 @@
     }
 
     async function getHzrckToken(channelToken) {
-      const infoBox = document.getElementById('infoBox');
-      infoBox.textContent = '✅ 使用 channelToken 获取 hzrckToken...';
+      const res = await nativeXHRPost(
+        'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
+        {
+          channelToken: channelToken,
+          channel: 'smk_app'
+        },
+        {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'sendClient': 'hellohzsmk',
+          'sendChl': 'hzsmk.h5',
+          'Origin': 'https://talent.hzrcm.cn',
+          'X-Requested-With': 'com.smk',
+          'Referer': 'https://talent.hzrcm.cn/exthtml/hangZhouTalentCard/index.html'
+        }
+      );
+      return res.data;
+    }
+
+    async function getHzrckToken(channelToken) {
       const res = await nativeXHRPost(
         'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
         {
@@ -172,9 +185,6 @@
     }
 
     async function changeToken(token) {
-      const infoBox = document.getElementById('infoBox');
-      infoBox.textContent = '✅ 正在换取 channelToken...';
-
       const res = await nativeXHRPost(
         'https://open.iconntech.com/unifyUser/changeToken',
         {
