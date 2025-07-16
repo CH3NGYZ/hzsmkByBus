@@ -40,7 +40,7 @@
 
 ## 🛠️ 开发说明
 
-本页面使用原生 HTML + Axios 编写，适合直接部署到 GitHub Pages：
+本页面使用原生 HTML 编写，适合直接部署到 GitHub Pages：
 
 - 主文件：`index.html`
 - 无需构建或依赖打包工具
