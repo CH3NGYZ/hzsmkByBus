@@ -24,9 +24,11 @@
 
 ### URL 格式：
 
-```https://ch3ngyz.github.io/hzsmkByBus/?token=xxxx```
-```https://hzsmk.ch3ng.top/?token=xxxx```
-其中 `xxxx` 是你从App`杭州市民卡`新登陆时，通过抓包`https://open.iconntech.com/unifyUser/queryUserByToken`获取到的请求体中的`accessToken`。
+- ```https://ch3ngyz.github.io/hzsmkByBus/?token=xxxx```
+或者
+- ```https://hzsmk.ch3ng.top/?token=xxxx```
+
+其中 `xxxx` 是你从`杭州市民卡`App登陆时，通过抓包`https://open.iconntech.com/unifyUser/queryUserByToken`获取到的请求体中的`accessToken`。
 测试请求成功后，推荐使用Hermit将网页作为轻app放置在桌面快速打开，或使用浏览器功能`添加书签到桌面`。
 
 ---
