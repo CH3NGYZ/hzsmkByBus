@@ -128,26 +128,68 @@
       const currentUrl = new URL(window.location.href);
       const startUrl = `${currentUrl.origin}${currentUrl.pathname}?token=${token}`;
       
+      // 生成 PNG 图标（兼容性更好）
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 生成 192x192 图标
+      canvas.width = 192;
+      canvas.height = 192;
+      ctx.fillStyle = '#4CAF50';
+      ctx.fillRect(0, 0, 192, 192);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 120px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🚌', 96, 100);
+      const icon192 = canvas.toDataURL('image/png');
+      
+      // 生成 512x512 图标
+      canvas.width = 512;
+      canvas.height = 512;
+      ctx.fillStyle = '#4CAF50';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 320px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🚌', 256, 266);
+      const icon512 = canvas.toDataURL('image/png');
+      
       const manifest = {
         "name": "杭州公交卡",
         "short_name": "公交卡",
         "description": "杭州人才卡公交额度查询",
         "start_url": startUrl,
+        "scope": "/",
         "display": "standalone",
         "background_color": "#ffffff",
         "theme_color": "#4CAF50",
         "orientation": "portrait",
         "icons": [
           {
-            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E",
+            "src": icon192,
             "sizes": "192x192",
-            "type": "image/svg+xml",
-            "purpose": "any maskable"
+            "type": "image/png",
+            "purpose": "any"
           },
           {
-            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E",
+            "src": icon192,
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+          },
+          {
+            "src": icon512,
             "sizes": "512x512",
-            "type": "image/svg+xml"
+            "type": "image/png",
+            "purpose": "any"
+          },
+          {
+            "src": icon512,
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
           }
         ]
       };
@@ -162,16 +204,16 @@
       link.href = manifestURL;
       document.head.appendChild(link);
       
-      // 添加 favicon
+      // 添加 favicon（使用 192 图标）
       const favicon = document.createElement('link');
       favicon.rel = 'icon';
-      favicon.href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E";
+      favicon.href = icon192;
       document.head.appendChild(favicon);
       
-      // 添加苹果设备支持
+      // 添加苹果设备支持（使用 192 图标）
       const appleTouchIcon = document.createElement('link');
       appleTouchIcon.rel = 'apple-touch-icon';
-      appleTouchIcon.href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E";
+      appleTouchIcon.href = icon192;
       document.head.appendChild(appleTouchIcon);
       
       const appleCapable = document.createElement('meta');
@@ -190,6 +232,14 @@
       document.head.appendChild(appleStatus);
       
       console.log('✅ PWA Manifest 已动态生成');
+      console.log('📱 Start URL:', startUrl);
+      
+      // 延迟检查 beforeinstallprompt 事件
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('🎉 beforeinstallprompt 事件触发，应用可以安装');
+        deferredPrompt = e;
+      });
     }
 
     // ========== 日志展开/收起功能 ==========
