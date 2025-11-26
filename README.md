@@ -10,7 +10,7 @@
 
 页面加载后自动执行以下逻辑：
 
-1. 接收 URL 中传入的 `token`（市民卡accessToken）；
+1. 接收 URL 中传入的 `token`（市民卡accessToken, 见下方使用方式）；
 2. 请求接口 `https://open.iconntech.com/unifyUser/changeToken` 获取对应的 `channelToken`；
 3. 用 `channelToken` 请求杭州市人才系统获取 `hzrckToken`；
 4. 自动跳转到杭州市人才系统的乘车码页面：
@@ -28,7 +28,7 @@
 或者
 - ```https://hzsmk.ch3ng.top/?token=xxxx```
 
-其中 `xxxx` 是你从`杭州市民卡`App登陆时，通过抓包`https://open.iconntech.com/unifyUser/queryUserByToken`获取到的请求体中的`accessToken`。
+其中 `xxxx` 是你从`杭州市民卡`App登陆时，通过抓包`https://open.iconntech.com/unifyUser/loginFaceCheck`(返回体中)或`https://open.iconntech.com/unifyUser/queryUserByToken`(请求体中)获取的`accessToken`。
 测试请求成功后，推荐使用Hermit将网页作为轻app放置在桌面快速打开，或使用浏览器功能`添加书签到桌面`。
 
 ---

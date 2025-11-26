@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>公交卡额度显示及嵌入页面</title>
+  <meta name="theme-color" content="#4CAF50">
+  <title>公交卡额度显示</title>
   <style>
     html, body {
       margin: 0; padding: 0; height: 100%;
@@ -37,14 +38,234 @@
       display: none;
       text-align: left;
     }
+    #logContainer {
+      flex: 0 0 auto;
+      background: #1e1e1e;
+      border-top: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      max-height: 50vh;
+      transition: max-height 0.3s ease;
+    }
+    #logContainer.collapsed {
+      max-height: 40px;
+    }
+    #logHeader {
+      background: #252526;
+      color: #cccccc;
+      padding: 0.5em 1em;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85em;
+      border-bottom: 1px solid #333;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    #logHeader:hover {
+      background: #2d2d30;
+    }
+    #logLatest {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-right: 1em;
+    }
+    #logArrow {
+      transition: transform 0.3s ease;
+      font-size: 1.2em;
+      flex-shrink: 0;
+    }
+    #logContainer.collapsed #logArrow {
+      transform: rotate(180deg);
+    }
+    #logBox {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.85em;
+      padding: 0.5em;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      flex: 1;
+      min-height: 0;
+    }
+    #logContainer.collapsed #logBox {
+      display: none;
+    }
+    .log-item {
+      padding: 2px 0;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .log-info { color: #4ec9b0; }
+    .log-warn { color: #dcdcaa; }
+    .log-error { color: #f48771; }
+    .log-success { color: #6a9955; }
   </style>
 </head>
 <body>
   <iframe id="webview" src="about:blank"></iframe>
   <div id="infoBox">正在获取公交卡额度...</div>
   <div id="errorBox"></div>
+  <div id="logContainer" class="collapsed">
+    <div id="logHeader">
+      <span id="logLatest">等待日志...</span>
+      <span id="logArrow">▼</span>
+    </div>
+    <div id="logBox"></div>
+  </div>
 
   <script>
+    // ========== 动态生成 PWA Manifest ==========
+    function generateManifest() {
+      const token = getQueryParam('token');
+      if (!token) return;
+      
+      // 构建带 token 的完整 URL
+      const currentUrl = new URL(window.location.href);
+      const startUrl = `${currentUrl.origin}${currentUrl.pathname}?token=${token}`;
+      
+      const manifest = {
+        "name": "杭州公交卡",
+        "short_name": "公交卡",
+        "description": "杭州人才卡公交额度查询",
+        "start_url": startUrl,
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#4CAF50",
+        "orientation": "portrait",
+        "icons": [
+          {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+          },
+          {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+          }
+        ]
+      };
+      
+      // 将 manifest 转换为 Blob URL
+      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      const manifestURL = URL.createObjectURL(manifestBlob);
+      
+      // 动态插入 manifest link
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestURL;
+      document.head.appendChild(link);
+      
+      // 添加 favicon
+      const favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      favicon.href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E";
+      document.head.appendChild(favicon);
+      
+      // 添加苹果设备支持
+      const appleTouchIcon = document.createElement('link');
+      appleTouchIcon.rel = 'apple-touch-icon';
+      appleTouchIcon.href = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%234CAF50' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'%3E🚌%3C/text%3E%3C/svg%3E";
+      document.head.appendChild(appleTouchIcon);
+      
+      const appleCapable = document.createElement('meta');
+      appleCapable.name = 'apple-mobile-web-app-capable';
+      appleCapable.content = 'yes';
+      document.head.appendChild(appleCapable);
+      
+      const appleTitle = document.createElement('meta');
+      appleTitle.name = 'apple-mobile-web-app-title';
+      appleTitle.content = '公交卡';
+      document.head.appendChild(appleTitle);
+      
+      const appleStatus = document.createElement('meta');
+      appleStatus.name = 'apple-mobile-web-app-status-bar-style';
+      appleStatus.content = 'default';
+      document.head.appendChild(appleStatus);
+      
+      console.log('✅ PWA Manifest 已动态生成');
+    }
+
+    // ========== 日志展开/收起功能 ==========
+    const logContainer = document.getElementById('logContainer');
+    const logHeader = document.getElementById('logHeader');
+    
+    logHeader.addEventListener('click', () => {
+      logContainer.classList.toggle('collapsed');
+    });
+
+    // ========== 日志输出到页面底部 ==========
+    const logBox = document.getElementById('logBox');
+    const logLatest = document.getElementById('logLatest');
+    
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const logItem = document.createElement('div');
+      logItem.className = `log-item log-${type}`;
+      const fullMessage = `[${timestamp}] ${message}`;
+      logItem.textContent = fullMessage;
+      logBox.appendChild(logItem);
+      logBox.scrollTop = logBox.scrollHeight;
+      
+      // 更新标题栏显示最新日志
+      logLatest.textContent = fullMessage;
+      logLatest.className = `log-${type}`;
+    }
+
+    // 重写 console 方法，同时输出到浏览器控制台和页面
+    const originalConsoleLog = console.log;
+    const originalConsoleWarn = console.warn;
+    const originalConsoleError = console.error;
+
+    console.log = function(...args) {
+      originalConsoleLog.apply(console, args);
+      addLog(args.join(' '), 'info');
+    };
+
+    console.warn = function(...args) {
+      originalConsoleWarn.apply(console, args);
+      addLog(args.join(' '), 'warn');
+    };
+
+    console.error = function(...args) {
+      originalConsoleError.apply(console, args);
+      addLog(args.join(' '), 'error');
+    };
+
+    // ========== 缓存管理工具 ==========
+    const cache = {
+      get(key) {
+        try {
+          const item = localStorage.getItem(key);
+          if (!item) return null;
+          return item;
+        } catch {
+          return null;
+        }
+      },
+      set(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {
+          console.warn('缓存写入失败:', e);
+        }
+      },
+      remove(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {
+          console.warn('缓存删除失败:', e);
+        }
+      }
+    };
+
+    // ========== 网络请求工具 ==========
     function nativeXHRPost(url, data, headers = {}) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -78,6 +299,7 @@
       });
     }
 
+    // ========== URL 参数解析 ==========
     function getQueryParam(key) {
       const queryString = window.location.search.substring(1);
       const params = queryString.split("&");
@@ -90,6 +312,7 @@
       return null;
     }
 
+    // ========== 错误显示 ==========
     function showError(title, err) {
       const errorBox = document.getElementById('errorBox');
       const infoBox = document.getElementById('infoBox');
@@ -105,48 +328,46 @@
       errorBox.textContent = msg;
     }
 
+    function updateStatus(msg) {
+      document.getElementById('infoBox').textContent = msg;
+    }
+
+    // ========== 核心业务函数 ==========
     async function getCouponInfo(hzrckToken, jumpUrl) {
-      const infoBox = document.getElementById('infoBox');
-      infoBox.textContent = '✅ 正在获取公交卡额度...';
+      updateStatus('✅ 正在获取公交卡额度...');
 
-      try {
-        const res = await nativeXHRPost(
-          'https://talent.hzrcm.cn/smk_hztalent_stu/front/app/qinghe/getUserCouponList',
-          { accessToken: hzrckToken },
-          {
-            'Content-Type': 'application/json;charset=UTF-8',
-            'sendClient': 'hellohzsmk',
-            'sendChl': 'hzsmk.h5',
-            'Origin': 'https://talent.hzrcm.cn',
-            'X-Requested-With': 'com.smk',
-            'Referer': 'https://talent.hzrcm.cn/exthtml/youngTalentCard/hzYouthTalentCard/',
-          }
-        );
-
-        if (res.data?.code === 'PY0000') {
-          const list = res.data.response?.[0]?.list || [];
-          const subwayItem = list.find(item => item.couponUseType === 'subway');
-          const titleRaw = subwayItem?.couponTitle || '未知额度';
-          const title = titleRaw.match(/\d+(?:\.\d+)?/)?.[0] || '未知额度';
-          const expire = subwayItem?.expireEndTime || '未知有效期';
-          
-          infoBox.innerHTML = `🎫 公交卡剩：<strong>${title} 元</strong><br>📅 有效期至：<strong>${expire}</strong>`;
-
-
-
-          document.getElementById('webview').src = jumpUrl;
-        } else {
-          throw new Error('获取公交卡额度失败，code: ' + res.data?.code);
+      const res = await nativeXHRPost(
+        'https://talent.hzrcm.cn/smk_hztalent_stu/front/app/qinghe/getUserCouponList',
+        { accessToken: hzrckToken },
+        {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'sendClient': 'hellohzsmk',
+          'sendChl': 'hzsmk.h5',
+          'Origin': 'https://talent.hzrcm.cn',
+          'X-Requested-With': 'com.smk',
+          'Referer': 'https://talent.hzrcm.cn/exthtml/youngTalentCard/hzYouthTalentCard/',
         }
-      } catch (err) {
-        showError('获取公交卡额度失败', err);
-        throw err;
+      );
+
+      if (res.data?.code === 'PY0000') {
+        const list = res.data.response?.[0]?.list || [];
+        const subwayItem = list.find(item => item.couponUseType === 'subway');
+        const titleRaw = subwayItem?.couponTitle || '未知额度';
+        const title = titleRaw.match(/\d+(?:\.\d+)?/)?.[0] || '未知额度';
+        const expire = subwayItem?.expireEndTime || '未知有效期';
+        
+        document.getElementById('infoBox').innerHTML = 
+          `🎫 公交卡剩：<strong>${title} 元</strong><br>📅 有效期至：<strong>${expire}</strong>`;
+
+        document.getElementById('webview').src = jumpUrl;
+        return true;
+      } else {
+        throw new Error('获取公交卡额度失败，code: ' + res.data?.code);
       }
     }
 
     async function getHzrckToken(channelToken) {
-      const infoBox = document.getElementById('infoBox');
-      infoBox.textContent = '✅ 使用 channelToken 获取 hzrckToken...';
+      updateStatus('✅ 使用 channelToken 获取 hzrckToken...');
       const res = await nativeXHRPost(
         'https://talent.hzrcm.cn/smk_hztalent/front/app/home/getHzrckToken',
         {
@@ -164,9 +385,9 @@
       );
       return res.data;
     }
+
     async function changeToken(token) {
-      const infoBox = document.getElementById('infoBox');
-      infoBox.textContent = '✅ 正在换取 channelToken...';
+      updateStatus('✅ 正在换取 channelToken...');
 
       const res = await nativeXHRPost(
         'https://open.iconntech.com/unifyUser/changeToken',
@@ -183,41 +404,82 @@
       );
       const newChannelToken = res.data?.data;
       if (!newChannelToken) throw new Error('未获取到 channelToken');
-      localStorage.setItem('channelToken', newChannelToken);
       return newChannelToken;
     }
 
-    const accountToken = getQueryParam('token');
-
+    // ========== 主流程（带缓存优化） ==========
     (async () => {
+      const accountToken = getQueryParam('token');
+      
+      // 先生成 PWA Manifest
+      generateManifest();
+      
       if (!accountToken) {
-        document.getElementById('infoBox').textContent = '';
+        updateStatus('');
         showError('缺少 token 参数', new Error('URL 参数中未找到 token'));
         return;
       }
 
-      let channelToken = localStorage.getItem('channelToken');
-      let hzrckToken;
-
       try {
-        if (channelToken) {
-          const res = await getHzrckToken(channelToken);
-          if (res?.code === 'PY0000') {
-            hzrckToken = res.response?.hzrckToken;
+        // ===== 步骤 1: 尝试使用缓存的 hzrckToken =====
+        const cachedHzrckToken = cache.get('hzrckToken');
+        
+        if (cachedHzrckToken) {
+          updateStatus('🚀 使用缓存的 Token 快速加载...');
+          try {
+            const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${cachedHzrckToken}`;
+            await getCouponInfo(cachedHzrckToken, jumpUrl);
+            console.log('✅ 缓存的 hzrckToken 仍然有效');
+            return; // 成功则直接结束
+          } catch (err) {
+            console.warn('⚠️ 缓存的 hzrckToken 已失效，重新获取', err.message);
+            cache.remove('hzrckToken');
           }
         }
 
-        if (!hzrckToken) {
-          channelToken = await changeToken(accountToken);
-          const res = await getHzrckToken(channelToken);
-          if (res?.code !== 'PY0000') throw new Error('使用新 channelToken 获取 hzrckToken 失败');
-          hzrckToken = res.response?.hzrckToken;
+        // ===== 步骤 2: 尝试使用缓存的 channelToken =====
+        let channelToken = cache.get('channelToken');
+        let hzrckToken;
+
+        if (channelToken) {
+          try {
+            const res = await getHzrckToken(channelToken);
+            if (res?.code === 'PY0000') {
+              hzrckToken = res.response?.hzrckToken;
+              console.log('✅ 使用缓存的 channelToken 成功获取 hzrckToken');
+            } else {
+              console.warn('⚠️ channelToken 返回异常，清除缓存');
+              cache.remove('channelToken');
+            }
+          } catch (err) {
+            console.warn('⚠️ 缓存的 channelToken 已失效', err.message);
+            cache.remove('channelToken');
+          }
         }
 
-        if (!hzrckToken) throw new Error('未获取到 hzrckToken');
+        // ===== 步骤 3: 使用 accountToken 重新获取完整链路 =====
+        if (!hzrckToken) {
+          channelToken = await changeToken(accountToken);
+          cache.set('channelToken', channelToken);
+          
+          const res = await getHzrckToken(channelToken);
+          if (res?.code !== 'PY0000') {
+            throw new Error('使用新 channelToken 获取 hzrckToken 失败');
+          }
+          hzrckToken = res.response?.hzrckToken;
+          console.log('✅ 完整链路获取 hzrckToken 成功');
+        }
 
+        if (!hzrckToken) {
+          throw new Error('未获取到 hzrckToken');
+        }
+
+        // ===== 步骤 4: 缓存新的 hzrckToken 并显示额度 =====
+        cache.set('hzrckToken', hzrckToken);
+        
         const jumpUrl = `https://hzrck.hzzhdj.cn/exthtml/youngTalentCard/freeCoderide/#/byBus?token=${hzrckToken}`;
         await getCouponInfo(hzrckToken, jumpUrl);
+
       } catch (err) {
         showError('加载失败', err);
       }
