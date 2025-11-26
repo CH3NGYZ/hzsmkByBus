@@ -96,6 +96,54 @@
     #logContainer.collapsed #logBox {
       display: none;
     }
+    #logActions {
+      background: #252526;
+      padding: 0.5em 1em;
+      border-top: 1px solid #333;
+      display: flex;
+      gap: 0.5em;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    #logContainer.collapsed #logActions {
+      display: none;
+    }
+    .log-btn {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 0.4em 0.8em;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.8em;
+      font-family: 'Consolas', 'Monaco', monospace;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .log-btn:hover {
+      background: #1177bb;
+    }
+    .log-btn:active {
+      background: #0d5a8f;
+    }
+    .log-btn.warning {
+      background: #f0ad4e;
+    }
+    .log-btn.warning:hover {
+      background: #f5c376;
+    }
+    .log-btn.warning:active {
+      background: #ec971f;
+    }
+    .log-btn.danger {
+      background: #d9534f;
+    }
+    .log-btn.danger:hover {
+      background: #e67370;
+    }
+    .log-btn.danger:active {
+      background: #c9302c;
+    }
     .log-item {
       padding: 2px 0;
       border-bottom: 1px solid #2a2a2a;
@@ -116,6 +164,12 @@
       <span id="logArrow">▼</span>
     </div>
     <div id="logBox"></div>
+    <div id="logActions">
+      <button class="log-btn warning" id="clearChannelTokenBtn">🗑️ 清除 ChannelToken</button>
+      <button class="log-btn warning" id="clearHzrckTokenBtn">🗑️ 清除 HzrckToken</button>
+      <button class="log-btn danger" id="clearAllBtn">🗑️ 清除全部</button>
+      <button class="log-btn" id="reloadBtn">🔄 重新加载</button>
+    </div>
   </div>
 
   <script>
@@ -245,9 +299,69 @@
     // ========== 日志展开/收起功能 ==========
     const logContainer = document.getElementById('logContainer');
     const logHeader = document.getElementById('logHeader');
+    const clearChannelTokenBtn = document.getElementById('clearChannelTokenBtn');
+    const clearHzrckTokenBtn = document.getElementById('clearHzrckTokenBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const reloadBtn = document.getElementById('reloadBtn');
     
     logHeader.addEventListener('click', () => {
       logContainer.classList.toggle('collapsed');
+    });
+
+    // 清除 ChannelToken 按钮
+    clearChannelTokenBtn.addEventListener('click', () => {
+      const hasToken = cache.get('channelToken');
+      
+      if (hasToken) {
+        cache.remove('channelToken');
+        console.log('🗑️ 已清除 channelToken');
+        alert('✅ ChannelToken 已清除！\n\n点击"重新加载"按钮刷新页面');
+      } else {
+        console.log('ℹ️ channelToken 不存在');
+        alert('ℹ️ 当前没有缓存的 ChannelToken');
+      }
+    });
+
+    // 清除 HzrckToken 按钮
+    clearHzrckTokenBtn.addEventListener('click', () => {
+      const hasToken = cache.get('hzrckToken');
+      
+      if (hasToken) {
+        cache.remove('hzrckToken');
+        console.log('🗑️ 已清除 hzrckToken');
+        alert('✅ HzrckToken 已清除！\n\n点击"重新加载"按钮刷新页面');
+      } else {
+        console.log('ℹ️ hzrckToken 不存在');
+        alert('ℹ️ 当前没有缓存的 HzrckToken');
+      }
+    });
+
+    // 清除全部缓存按钮
+    clearAllBtn.addEventListener('click', () => {
+      const hasChannelToken = cache.get('channelToken');
+      const hasHzrckToken = cache.get('hzrckToken');
+      
+      cache.remove('channelToken');
+      cache.remove('hzrckToken');
+      
+      if (hasChannelToken || hasHzrckToken) {
+        console.log('🗑️ 已清除全部缓存的 Token');
+        console.log('  - channelToken: ' + (hasChannelToken ? '已删除' : '不存在'));
+        console.log('  - hzrckToken: ' + (hasHzrckToken ? '已删除' : '不存在'));
+        alert('✅ 全部缓存已清除！\n\n已删除：\n' + 
+              (hasChannelToken ? '• ChannelToken\n' : '') + 
+              (hasHzrckToken ? '• HzrckToken\n' : '') +
+              '\n点击"重新加载"按钮刷新页面');
+      } else {
+        console.log('ℹ️ 缓存为空，无需清除');
+        alert('ℹ️ 当前没有缓存的 Token');
+      }
+    });
+
+    // 重新加载按钮
+    reloadBtn.addEventListener('click', () => {
+      console.log('🔄 重新加载页面...');
+      window.location.reload();
     });
 
     // ========== 日志输出到页面底部 ==========
