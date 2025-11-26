@@ -30,6 +30,25 @@
       width: 100%;
       max-width: 100vw;
     }
+    #installPrompt {
+      background: #4CAF50;
+      color: white;
+      padding: 0.8em 1em;
+      text-align: center;
+      cursor: pointer;
+      display: none;
+      border-top: 2px solid #45a049;
+      user-select: none;
+    }
+    #installPrompt:hover {
+      background: #45a049;
+    }
+    #installPrompt:active {
+      background: #3d8b40;
+    }
+    #installPrompt.show {
+      display: block;
+    }
     #errorBox {
       color: red;
       white-space: pre-wrap;
@@ -155,6 +174,9 @@
   </style>
 </head>
 <body>
+  <div id="installPrompt">
+    <strong>📲 点击此处安装应用到桌面</strong>
+  </div>
   <iframe id="webview" src="about:blank"></iframe>
   <div id="infoBox">正在获取公交卡额度...</div>
   <div id="errorBox"></div>
@@ -287,14 +309,52 @@
       
       console.log('✅ PWA Manifest 已动态生成');
       console.log('📱 Start URL:', startUrl);
-      
-      // 延迟检查 beforeinstallprompt 事件
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('🎉 beforeinstallprompt 事件触发，应用可以安装');
-        deferredPrompt = e;
-      });
     }
+
+    // ========== PWA 安装提示处理 ==========
+    let deferredPrompt = null;
+    const installPrompt = document.getElementById('installPrompt');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // 阻止浏览器默认的安装提示
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // 显示自定义安装按钮
+      installPrompt.classList.add('show');
+      console.log('🎉 应用可以安装，已显示安装按钮');
+    });
+
+    // 点击安装按钮
+    installPrompt.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        console.warn('⚠️ 安装提示未准备好');
+        alert('⚠️ 安装功能暂不可用\n\n请尝试：\n1. 从浏览器菜单手动安装\n2. 或稍后再试');
+        return;
+      }
+
+      // 显示安装提示
+      deferredPrompt.prompt();
+      
+      // 等待用户响应
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        console.log('✅ 用户接受了安装');
+      } else {
+        console.log('❌ 用户拒绝了安装');
+      }
+      
+      // 清除保存的事件
+      deferredPrompt = null;
+      installPrompt.classList.remove('show');
+    });
+
+    // 监听应用已安装事件
+    window.addEventListener('appinstalled', () => {
+      console.log('🎊 应用已成功安装到设备');
+      installPrompt.classList.remove('show');
+    });
 
     // ========== 日志展开/收起功能 ==========
     const logContainer = document.getElementById('logContainer');
